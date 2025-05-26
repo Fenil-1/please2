@@ -14,7 +14,7 @@ export default function UserNotFound({
             ? "We encountered an error while trying to load this page. This might be due to an issue with our data source or configuration."
             : "The username you are looking for does not exist in our database or may have been removed."}
         </p>
-        <a href={process.env.NEXT_AUTH_URL || 'http//localhost:3000'} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+        <a href={process.env.NEXT_AUTH_URL || 'https://fenil.life'} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
           Return to Home
         </a>
       </div>

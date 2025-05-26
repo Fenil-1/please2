@@ -10,12 +10,13 @@ import UserNotFound from "./UserNotFound"
 
 export default function HomeClient({ lastSignups }: { lastSignups: UserData[] }) {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const hostname = window.location.hostname;
-  const sub = hostname.split('.')[0];
-  console.log({ sub });
+  const [sub, setSub] = useState<string | null>(null);
 
 
   useEffect(() => {
+    const hostname = window.location.hostname;
+    const sub = hostname.split('.')[0];    
+    setSub(sub);
     async function fetchData() {
       const userData = await getUserData(sub);
       setUserData(userData);

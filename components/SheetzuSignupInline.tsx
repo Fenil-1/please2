@@ -487,14 +487,14 @@ export default function SheetzuSignupInline() {
             <div className="flex flex-col items-center gap-4 animate-fade-in">
               <div className="text-5xl animate-bounce">🎉🥳🎊</div>
               <a
-                href={`http://${username}.localhost:3000`}
+                href={`http://${username}.fenil.life`}
                 className="mb-4 px-8 py-3 rounded bg-[#0F9D58] text-white text-lg shadow hover:bg-[#0c7c43] transition"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Your Sheetzu store is live!
               </a>
-              <div className="text-gray-600 text-sm">Visit: <span className="font-mono">{username}.localhost:3000</span></div>
+              <div className="text-gray-600 text-sm">Visit: <span className="font-mono">{username}.fenil.life</span></div>
             </div>
            
           )}
