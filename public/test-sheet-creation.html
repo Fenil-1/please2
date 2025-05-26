@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Sheet Creation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    button.secondary {
+      background-color: #f1f3f4;
+      color: #202124;
+      border: 1px solid #dadce0;
+    }
+    button.secondary:hover {
+      background-color: #e8eaed;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: red;
+    }
+    .success {
+      color: green;
+    }
+    .info {
+      color: #3367d6;
+    }
+    .existing-sheet {
+      background-color: #e6f4ea;
+      border: 1px solid #ceead6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .actions {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Sheet Creation</h1>
+  
+  <!-- Existing sheet info -->
+  <div id="existing-sheet-container" style="display: none;" class="existing-sheet">
+    <h3>You already have a Sheetzu sheet!</h3>
+    <p>Sheet ID: <span id="existing-sheet-id"></span></p>
+    <p><a id="existing-sheet-link" href="#" target="_blank">View your sheet</a></p>
+    <button id="clearSheetButton" class="secondary">Clear Saved Sheet ID</button>
+  </div>
+  
+  <div id="create-form">
+    <p>Click the button below to test creating a new sheet from the template.</p>
+    
+    <div>
+      <label for="templateId">Template Sheet ID:</label>
+      <input type="text" id="templateId" size="50" value="1us2AuraLRJ_M2A-k0Vpt1IRAgZdqyH48KCQRH1UPfSU">
+    </div>
+    
+    <p class="actions">
+      <button id="createButton">Create Sheet from Template</button>
+    </p>
+  </div>
+  
+  <div id="result">Results will appear here...</div>
+  
+  <script>
+    // Check for existing sheet ID on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const existingSheetId = localStorage.getItem('sheetzu_sheet_id');
+      if (existingSheetId) {
+        displayExistingSheet(existingSheetId);
+      }
+    });
+    
+    function displayExistingSheet(sheetId) {
+      const container = document.getElementById('existing-sheet-container');
+      const idSpan = document.getElementById('existing-sheet-id');
+      const link = document.getElementById('existing-sheet-link');
+      
+      idSpan.textContent = sheetId;
+      link.href = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+      container.style.display = 'block';
+    }
+    
+    // Clear sheet ID button
+    document.getElementById('clearSheetButton').addEventListener('click', function() {
+      localStorage.removeItem('sheetzu_sheet_id');
+      document.getElementById('existing-sheet-container').style.display = 'none';
+      document.getElementById('result').innerHTML = 'Saved sheet ID cleared. You can now create a new sheet.';
+      document.getElementById('result').className = 'info';
+    });
+    
+    // Create sheet button
+    document.getElementById('createButton').addEventListener('click', async function() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Creating sheet...';
+      resultDiv.className = '';
+      
+      // First check if we already have a sheet ID
+      const existingSheetId = localStorage.getItem('sheetzu_sheet_id');
+      if (existingSheetId) {
+        resultDiv.innerHTML = `You already have a sheet with ID: ${existingSheetId}. Clear it first if you want to create a new one.`;
+        resultDiv.className = 'info';
+        return;
+      }
+      
+      try {
+        const templateId = document.getElementById('templateId').value.trim();
+        
+        if (!templateId) {
+          throw new Error('Please enter a template sheet ID');
+        }
+        
+        const response = await fetch('/api/sheets/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            templateId: templateId
+          }),
+          credentials: 'include' // Include cookies for authentication
+        });
+        
+        // Get the response text
+        const responseText = await response.text();
+        
+        try {
+          // Try to parse as JSON
+          const data = JSON.parse(responseText);
+          
+          if (response.ok) {
+            if (data.sheetId) {
+              // Save the sheet ID to localStorage
+              localStorage.setItem('sheetzu_sheet_id', data.sheetId);
+              
+              resultDiv.innerHTML = `
+                <span class="success">✅ Sheet created successfully!</span>
+                <br><br>
+                <strong>Sheet ID:</strong> ${data.sheetId}
+                <br>
+                <strong>Sheet URL:</strong> <a href="https://docs.google.com/spreadsheets/d/${data.sheetId}" target="_blank">https://docs.google.com/spreadsheets/d/${data.sheetId}</a>
+              `;
+              resultDiv.className = 'success';
+              
+              // Update the existing sheet display
+              displayExistingSheet(data.sheetId);
+            } else {
+              resultDiv.innerHTML = 'No sheet ID returned from API.';
+              resultDiv.className = 'error';
+            }
+          } else {
+            resultDiv.innerHTML = `Error: ${data.error || response.statusText}\n\nDetails: ${data.details || 'No details provided'}`;
+            resultDiv.className = 'error';
+          }
+        } catch (jsonError) {
+          // If not valid JSON, show the raw response
+          resultDiv.innerHTML = `Failed to parse response as JSON. Raw response:\n\n${responseText}`;
+          resultDiv.className = 'error';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+        resultDiv.className = 'error';
+      }
+    });
+  </script>
+</body>
+</html> 
